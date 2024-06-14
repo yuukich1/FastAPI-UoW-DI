@@ -3,4 +3,5 @@ venv/
 migrations/
 __pycache__
 .pytest_cache
-test
+.env
+logs/

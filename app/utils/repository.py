@@ -50,8 +50,7 @@ class SQLAlchemyRepository(AbstractRepository):
     async def find_one(self, **filter_by):
         stmt = select(self.model).filter_by(**filter_by)
         res = await self.session.execute(stmt)
-        res = res.scalar_one().to_read_model()
-        return res
+        return res.scalar_one().to_read_model()
     
     
     async def edit_one(self, id: int, data: dict):

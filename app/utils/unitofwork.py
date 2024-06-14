@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import Type
+from redis import asyncio as aioredis
 from app.db import async_session_maker
 from app.repositories.category import CategoryRepository
 from app.repositories.order import OrderRepository
@@ -8,6 +9,8 @@ from app.repositories.product_image import ProductImageRepository
 from app.repositories.role import RolesRepository
 from app.repositories.status_order import StatusOrderRepository
 from app.repositories.user import UserRepository
+from app.config import REDIS_URL
+
 
 class IUnitOfWork(ABC):
     category: Type[CategoryRepository]
@@ -17,6 +20,7 @@ class IUnitOfWork(ABC):
     role: Type[RolesRepository]
     status_order: Type[StatusOrderRepository]
     user: Type[UserRepository]
+    redis: aioredis.Redis
 
 
     @abstractmethod
@@ -47,9 +51,11 @@ class IUnitOfWork(ABC):
 class UnitOfWork:
     def __init__(self) -> None:
         self.session_factory = async_session_maker
+        
 
     async def __aenter__(self):
         self.session = self.session_factory()
+        self.redis = aioredis.from_url(REDIS_URL)
         self.category = CategoryRepository(self.session)
         self.order = OrderRepository(self.session)
         self.product = ProductRepository(self.session)
@@ -62,6 +68,7 @@ class UnitOfWork:
     async def __aexit__(self, *args):
         await self.rollback()
         await self.session.close()
+        await self.redis.aclose()
 
     async def commit(self):
         await self.session.commit()
